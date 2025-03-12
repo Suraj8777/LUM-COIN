@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="monetag" content="d25b4a5eb082f158eba7d47587c12a64">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoTap</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #0f0;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .crypto-box {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .crypto-box:active {
+            transform: scale(0.95);
+        }
+        .tap-image {
+            width: 200px;
+            height: auto;
+        }
+        .stats p {
+            margin: 10px 0;
+            font-size: 1.2em;
+        }
+        .upgrades {
+            margin-top: 20px;
+        }
+        .upgrade-btn {
+            background: #002200;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .upgrade-btn:hover {
+            background: #004400;
+        }
+        .floating-text {
+            position: absolute;
+            color: #0f0;
+            pointer-events: none;
+            font-size: 1.2em;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            transition: all 1s ease-out;
+            opacity: 1;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #001100;
+            margin: 15% auto;
+            padding: 20px;
+            border: 2px solid #0f0;
+            width: 80%;
+            max-width: 400px;
+            position: relative;
+            border-radius: 10px;
+        }
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #0f0;
+        }
+        .coming-soon {
+            color: #ff0;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+        #wallet-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #002200;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            z-index: 1001;
+            transition: background 0.3s;
+        }
+        #wallet-btn:hover {
+            background: #004400;
+        }
+        #progress-bar {
+            width: 100%;
+            background: #222;
+            height: 20px;
+            margin-top: 10px;
+            border: 1px solid #0f0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        #progress-fill {
+            height: 100%;
+            background: #0f0;
+            width: 0%;
+            transition: width 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <button id="wallet-btn">Wallet</button>
+    <div class="container">
+        <h1>CRYPTOTAP</h1>
+        <div class="crypto-box" id="crypto-box">
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhrrkcPzCcd2jVb1vCaDkAX0Gzdut6LbP1dFXTa11LHGo4sqd5b0AbKQ6j2oSPXwwOTOtoSBJPZcO6rt-TZBV15WLb9JCVO1d752S1A-9NMr9deK3IgGjSTX0AuZ0JLNlFA03wGhbjdcfZJUJqveYwxBOU81incG8-lXbSw5K4QFvQWILH8NrFowGeEZAlP/s320/Facebook_creation_1641441816496464.jpeg" 
+                 class="tap-image" 
+                 alt="Tap to Mine">
+            <h2 id="display-text">TAP TO MINE</h2>
+        </div>
+        <div class="stats">
+            <p>Balance: $<span id="balance">0.00</span></p>
+            <p>Hash Power: <span id="hash-rate">0.00</span>/s</p>
+            <p>Tap Power: <span id="tap-power">1.00</span></p>
+            <p>LUM Coins: <span id="lum-coins">0.00</span></p>
+        </div>
+        <div id="progress-bar">
+            <div id="progress-fill"></div>
+        </div>
+        <div class="upgrades" id="upgrades"></div>
+    </div>
+
+    <!-- Wallet Modal -->
+    <div id="wallet-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Digital Wallet</h2>
+            <div class="wallet-info">
+                <p>LUM Balance: <span id="wallet-lum">0.00</span></p>
+                <p>USD Balance: $<span id="wallet-usd">0.00</span></p>
+                <button onclick="showComingSoon()" class="upgrade-btn">Withdraw Funds</button>
+            </div>
+            <p class="coming-soon">More features coming soon!</p>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let balance = 0;
+        let hashRate = 0;
+        let tapPower = 1;
+        let lumCoins = 0;
+        let displayedBalance = 0;
+        let lastTime = Date.now();
+
+        // Elements
+        const cryptoBox = document.getElementById('crypto-box');
+        const balanceDisplay = document.getElementById('balance');
+        const hashRateDisplay = document.getElementById('hash-rate');
+        const tapPowerDisplay = document.getElementById('tap-power');
+        const lumCoinsDisplay = document.getElementById('lum-coins');
+        const upgradesContainer = document.getElementById('upgrades');
+        const displayText = document.getElementById('display-text');
+        const progressFill = document.getElementById('progress-fill');
+
+        // Wallet Elements
+        const walletModal = document.getElementById('wallet-modal');
+        const walletLumDisplay = document.getElementById('wallet-lum');
+        const walletUsdDisplay = document.getElementById('wallet-usd');
+
+        // Upgrades Definition
+        const upgrades = [
+            { name: "Boost Tap Power", baseCost: 10, costFactor: 1.2, effect: 1.5, type: 'multiplicative', target: 'tapPower' },
+            { name: "Buy GPU Miner", baseCost: 50, costFactor: 1.15, effect: 0.5, type: 'additive', target: 'hashRate' },
+            { name: "Upgrade Mining Rig", baseCost: 200, costFactor: 1.3, effect: 1.2, type: 'multiplicative', target: 'hashRate' },
+            { name: "LUM Optimizer", baseCost: 500, costFactor: 1.25, effect: 1.3, type: 'multiplicative', target: 'tapPower' }
+        ];
+        let upgradeLevels = {};
+
+        // Initialize Upgrade Levels
+        for (let upgrade of upgrades) {
+            upgradeLevels[upgrade.name] = 0;
+        }
+
+        // Sound Effects
+        const tapSound = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
+        tapSound.volume = 0.5;
+
+        // Animations
+        function createFloatingText(amount) {
+            const floatingText = document.createElement('div');
+            floatingText.className = 'floating-text';
+            floatingText.textContent = `+$${amount.toFixed(2)}`;
+            const rect = cryptoBox.getBoundingClientRect();
+            floatingText.style.left = `${event.clientX - rect.left - 20}px`;
+            floatingText.style.top = `${event.clientY - rect.top - 20}px`;
+            cryptoBox.appendChild(floatingText);
+            setTimeout(() => {
+                floatingText.style.opacity = '0';
+                floatingText.style.transform = 'translateY(-50px)';
+                setTimeout(() => floatingText.remove(), 1000);
+            }, 50);
+        }
+
+        // Mining Function
+        function mine() {
+            const mined = tapPower * (1 + Math.random());
+            balance += mined;
+            lumCoins += mined * 0.05;
+            createFloatingText(mined);
+            tapSound.play();
+            displayText.textContent = 'MINING...';
+            setTimeout(() => { displayText.textContent = 'TAP TO MINE'; }, 200);
+            updateWalletDisplay();
+        }
+
+        // Wallet Functions
+        function updateWalletDisplay() {
+            walletLumDisplay.textContent = lumCoins.toFixed(2);
+            walletUsdDisplay.textContent = balance.toFixed(2);
+        }
+
+        function showComingSoon() {
+            alert("Withdrawal feature is coming soon! Stay tuned!");
+        }
+
+        // Modal Handling
+        document.getElementById('wallet-btn').onclick = () => {
+            walletModal.style.display = 'block';
+            updateWalletDisplay();
+        };
+        document.querySelector('.close').onclick = () => {
+            walletModal.style.display = 'none';
+        };
+        window.onclick = (event) => {
+            if (event.target === walletModal) {
+                walletModal.style.display = 'none';
+            }
+        };
+
+        // Upgrade Functions
+        function getUpgradeCost(upgrade) {
+            return upgrade.baseCost * Math.pow(upgrade.costFactor, upgradeLevels[upgrade.name]);
+        }
+
+        function buyUpgrade(upgrade) {
+            const cost = getUpgradeCost(upgrade);
+            if (balance >= cost) {
+                balance -= cost;
+                upgradeLevels[upgrade.name] += 1;
+                if (upgrade.type === 'multiplicative') {
+                    if (upgrade.target === 'tapPower') tapPower *= upgrade.effect;
+                    else if (upgrade.target === 'hashRate') hashRate *= upgrade.effect;
+                } else if (upgrade.type === 'additive') {
+                    if (upgrade.target === 'hashRate') hashRate += upgrade.effect;
+                }
+                updateUpgradesDisplay();
+                saveGame();
+            }
+        }
+
+        function updateUpgradesDisplay() {
+            upgradesContainer.innerHTML = '';
+            for (let upgrade of upgrades) {
+                const level = upgradeLevels[upgrade.name];
+                const cost = getUpgradeCost(upgrade).toFix
